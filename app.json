@@ -5,7 +5,10 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
-    "platforms": ["ios", "android"],
+    "platforms": [
+      "ios",
+      "android"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.hybridmeshchat.app"
@@ -20,6 +23,11 @@
         "ACCESS_FINE_LOCATION",
         "INTERNET"
       ]
+    },
+    "extra": {
+      "eas": {
+        "projectId": "1d3e61f4-0814-47f1-9800-ee8d551cbe5d"
+      }
     }
   }
 }

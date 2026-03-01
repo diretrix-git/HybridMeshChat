@@ -1,7 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Button, TextInput, FlatList, Alert } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, Button, TextInput, FlatList, Alert, ScrollView } from 'react-native';
 
-// Simplified version for native build
 export default function App() {
   const [connected, setConnected] = useState(false);
   const [messages, setMessages] = useState<any[]>([]);
@@ -13,20 +12,26 @@ export default function App() {
 
   const handleConnect = () => {
     setConnected(true);
-    Alert.alert('Connected!', 'Connected to room (Native App Mode)');
+    Alert.alert('Connected!', 'Ready to chat in offline mode');
     
     setMessages([
       {
         id: '1',
         senderId: 'system',
-        content: 'Welcome to HybridMeshChat Native App!',
+        content: 'Welcome to HybridMeshChat!',
         timestamp: Date.now(),
       },
       {
         id: '2',
         senderId: 'system',
-        content: 'WiFi hotspot mode ready. Full features enabled!',
+        content: 'This is a simplified version for testing the build.',
         timestamp: Date.now() + 1000,
+      },
+      {
+        id: '3',
+        senderId: 'system',
+        content: 'Full WiFi/Bluetooth features will be added after successful build.',
+        timestamp: Date.now() + 2000,
       },
     ]);
   };
@@ -49,17 +54,6 @@ export default function App() {
 
     setMessages([...messages, newMessage]);
     setInputText('');
-
-    setTimeout(() => {
-      const response = {
-        id: (Date.now() + 1).toString(),
-        senderId: 'peer-device',
-        content: 'Message received and encrypted!',
-        timestamp: Date.now() + 1000,
-      };
-      
-      setMessages(prev => [...prev, response]);
-    }, 1000);
   };
 
   const renderMessage = ({ item }: { item: any }) => (
@@ -70,7 +64,7 @@ export default function App() {
       <Text style={styles.senderText}>
         {item.senderId === 'system' ? 'System' : 
          item.senderId === deviceId ? 'You' : 
-         item.senderId.substr(0, 10)}
+         item.senderId.substring(0, 10)}
       </Text>
       <Text style={styles.messageText}>{item.content}</Text>
       <Text style={styles.timestampText}>
@@ -81,55 +75,72 @@ export default function App() {
 
   if (!connected) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.title}>🔗 HybridMeshChat</Text>
-        <Text style={styles.subtitle}>Offline-First P2P Messaging</Text>
-        <Text style={styles.nativeLabel}>NATIVE APP</Text>
-        
-        <View style={styles.form}>
-          <Text style={styles.label}>Room ID:</Text>
-          <TextInput
-            style={styles.input}
-            value={roomId}
-            onChangeText={setRoomId}
-            placeholder="Enter room ID"
-          />
+      <ScrollView style={styles.container}>
+        <View style={styles.content}>
+          <Text style={styles.title}>🔗 HybridMeshChat</Text>
+          <Text style={styles.subtitle}>Offline-First P2P Messaging</Text>
+          <Text style={styles.versionLabel}>v1.0 - Build Test</Text>
+          
+          <View style={styles.form}>
+            <Text style={styles.label}>Room ID:</Text>
+            <TextInput
+              style={styles.input}
+              value={roomId}
+              onChangeText={setRoomId}
+              placeholder="Enter room ID"
+            />
 
-          <Text style={styles.label}>Server URL (WiFi Hotspot):</Text>
-          <TextInput
-            style={styles.input}
-            value={serverUrl}
-            onChangeText={setServerUrl}
-            placeholder="192.168.43.1:3000"
-            autoCapitalize="none"
-          />
+            <Text style={styles.label}>Server URL (WiFi Hotspot):</Text>
+            <TextInput
+              style={styles.input}
+              value={serverUrl}
+              onChangeText={setServerUrl}
+              placeholder="192.168.43.1:3000"
+              autoCapitalize="none"
+            />
 
-          <Text style={styles.label}>Password:</Text>
-          <TextInput
-            style={styles.input}
-            value={password}
-            onChangeText={setPassword}
-            placeholder="Enter password"
-            secureTextEntry
-          />
+            <Text style={styles.label}>Password:</Text>
+            <TextInput
+              style={styles.input}
+              value={password}
+              onChangeText={setPassword}
+              placeholder="Enter password"
+              secureTextEntry
+            />
 
-          <Button title="Connect to Room" onPress={handleConnect} />
+            <View style={styles.buttonContainer}>
+              <Button title="Connect to Room" onPress={handleConnect} color="#667eea" />
+            </View>
+          </View>
+
+          <View style={styles.infoBox}>
+            <Text style={styles.infoTitle}>📱 Build Status</Text>
+            <Text style={styles.infoText}>✅ Native Android app</Text>
+            <Text style={styles.infoText}>✅ UI working</Text>
+            <Text style={styles.infoText}>✅ Ready for testing</Text>
+            <Text style={styles.infoText}>Device ID: {deviceId}</Text>
+          </View>
+
+          <View style={styles.noteBox}>
+            <Text style={styles.noteTitle}>📝 Note:</Text>
+            <Text style={styles.noteText}>
+              This is a simplified version to test the build process.
+              Full features (WiFi, Bluetooth, encryption, etc.) will be
+              added after confirming the build works successfully.
+            </Text>
+          </View>
         </View>
-
-        <Text style={styles.infoText}>
-          Device ID: {deviceId}
-        </Text>
-        <Text style={styles.infoText}>
-          Native app with full WiFi/Bluetooth support!
-        </Text>
-      </View>
+      </ScrollView>
     );
   }
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Room: {roomId}</Text>
+        <View>
+          <Text style={styles.headerTitle}>Room: {roomId}</Text>
+          <Text style={styles.headerSubtitle}>Device: {deviceId.substring(0, 10)}</Text>
+        </View>
         <Button title="Disconnect" onPress={handleDisconnect} color="#ff4444" />
       </View>
 
@@ -149,7 +160,7 @@ export default function App() {
           placeholder="Type a message..."
           multiline
         />
-        <Button title="Send" onPress={handleSendMessage} />
+        <Button title="Send" onPress={handleSendMessage} color="#667eea" />
       </View>
     </View>
   );
@@ -159,22 +170,25 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
+  },
+  content: {
+    padding: 20,
     paddingTop: 50,
   },
   title: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: 10,
     color: '#667eea',
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 18,
     textAlign: 'center',
     color: '#666',
-    marginBottom: 10,
+    marginBottom: 5,
   },
-  nativeLabel: {
+  versionLabel: {
     fontSize: 12,
     textAlign: 'center',
     color: '#28a745',
@@ -182,15 +196,17 @@ const styles = StyleSheet.create({
     backgroundColor: '#d4edda',
     paddingVertical: 5,
     marginBottom: 20,
+    borderRadius: 4,
   },
   form: {
-    padding: 20,
+    marginBottom: 20,
   },
   label: {
     fontSize: 14,
     fontWeight: '600',
     marginTop: 15,
     marginBottom: 5,
+    color: '#333',
   },
   input: {
     backgroundColor: 'white',
@@ -200,17 +216,50 @@ const styles = StyleSheet.create({
     borderColor: '#ddd',
     fontSize: 16,
   },
+  buttonContainer: {
+    marginTop: 20,
+  },
+  infoBox: {
+    backgroundColor: '#e3f2fd',
+    padding: 15,
+    borderRadius: 8,
+    marginBottom: 15,
+  },
+  infoTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    color: '#1976d2',
+  },
   infoText: {
-    fontSize: 12,
-    color: '#666',
-    textAlign: 'center',
-    marginTop: 10,
+    fontSize: 14,
+    color: '#333',
+    marginBottom: 5,
+  },
+  noteBox: {
+    backgroundColor: '#fff3cd',
+    padding: 15,
+    borderRadius: 8,
+    borderLeftWidth: 4,
+    borderLeftColor: '#ffc107',
+  },
+  noteTitle: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginBottom: 8,
+    color: '#856404',
+  },
+  noteText: {
+    fontSize: 13,
+    color: '#856404',
+    lineHeight: 20,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 15,
+    paddingTop: 50,
     backgroundColor: 'white',
     borderBottomWidth: 1,
     borderBottomColor: '#ddd',
@@ -218,6 +267,12 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: 'bold',
+    color: '#333',
+  },
+  headerSubtitle: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 2,
   },
   messageList: {
     flex: 1,
@@ -238,19 +293,24 @@ const styles = StyleSheet.create({
   otherMessage: {
     alignSelf: 'flex-start',
     backgroundColor: 'white',
+    borderWidth: 1,
+    borderColor: '#ddd',
   },
   senderText: {
     fontSize: 10,
     opacity: 0.7,
     marginBottom: 4,
+    color: '#fff',
   },
   messageText: {
     fontSize: 16,
+    color: '#fff',
   },
   timestampText: {
     fontSize: 10,
     opacity: 0.6,
     marginTop: 4,
+    color: '#fff',
   },
   inputContainer: {
     flexDirection: 'row',
@@ -267,5 +327,6 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 20,
     maxHeight: 100,
+    fontSize: 16,
   },
 });
