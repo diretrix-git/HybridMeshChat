@@ -1,0 +1,25 @@
+{
+  "expo": {
+    "name": "HybridMeshChat",
+    "slug": "hybridmeshchat",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "platforms": ["ios", "android"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.hybridmeshchat.app"
+    },
+    "android": {
+      "package": "com.hybridmeshchat.app",
+      "permissions": [
+        "BLUETOOTH",
+        "BLUETOOTH_ADMIN",
+        "BLUETOOTH_CONNECT",
+        "BLUETOOTH_SCAN",
+        "ACCESS_FINE_LOCATION",
+        "INTERNET"
+      ]
+    }
+  }
+}

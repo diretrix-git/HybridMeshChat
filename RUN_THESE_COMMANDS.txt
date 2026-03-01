@@ -1,0 +1,51 @@
+================================================================================
+  🚀 RUN THESE COMMANDS IN YOUR TERMINAL
+================================================================================
+
+STEP 1: Login to Expo
+----------------------
+Copy and paste this command:
+
+    eas login
+
+Then:
+- If you HAVE an Expo account: Enter your email and password
+- If you DON'T have an account: Use "eas register" instead to create one
+
+STEP 2: Build Your App
+-----------------------
+After logging in, copy and paste this command:
+
+    eas build --platform android --profile preview
+
+Then:
+- Wait 10-15 minutes for the build to complete
+- You'll get a download link for the APK
+- Download and install on your phone!
+
+================================================================================
+
+WHY I CAN'T RUN IT FOR YOU:
+- The login command needs YOUR personal Expo account credentials
+- I can't enter your email/password for you
+- You need to run it in your terminal
+
+WHAT WILL HAPPEN:
+1. "eas login" will ask for your email and password
+2. After login, "eas build" will upload your code and build the APK
+3. You'll get a link to download the APK when done
+4. Install on your phone and start chatting!
+
+TIME REQUIRED:
+- Login: 1 minute
+- Build: 10-15 minutes
+- Total: ~15 minutes
+
+================================================================================
+
+COPY THESE COMMANDS NOW:
+
+eas login
+eas build --platform android --profile preview
+
+================================================================================

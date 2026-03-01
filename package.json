@@ -1,0 +1,23 @@
+{
+  "name": "hybridmeshchat",
+  "version": "1.0.0",
+  "main": "expo/AppEntry.js",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo run:android",
+    "ios": "expo run:ios"
+  },
+  "dependencies": {
+    "@types/react": "~19.1.10",
+    "crypto-js": "^4.2.0",
+    "expo": "~54.0.0",
+    "expo-sqlite": "~16.0.0",
+    "react": "18.3.1",
+    "react-native": "0.76.9",
+    "react-native-ble-plx": "^3.5.1",
+    "socket.io-client": "^4.8.3",
+    "typescript": "~5.9.2",
+    "uuid": "^13.0.0"
+  },
+  "private": true
+}
