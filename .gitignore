@@ -92,7 +92,7 @@ coverage/
 *~
 
 # Package manager
-package-lock.json
+# package-lock.json is intentionally tracked for reproducible EAS builds
 yarn.lock
 pnpm-lock.yaml
 
