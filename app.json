@@ -2,6 +2,7 @@
   "expo": {
     "name": "HybridMeshChat",
     "slug": "hybridmeshchat",
+    "owner": "diretrix",
     "version": "1.0.0",
     "sdkVersion": "50.0.0",
     "orientation": "portrait",
@@ -17,9 +18,18 @@
     "android": {
       "package": "com.hybridmeshchat.app",
       "permissions": [
-        "INTERNET"
+        "INTERNET",
+        "CAMERA"
       ]
     },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow HybridMeshChat to access your camera for QR code scanning."
+        }
+      ]
+    ],
     "extra": {
       "eas": {
         "projectId": "1d3e61f4-0814-47f1-9800-ee8d551cbe5d"

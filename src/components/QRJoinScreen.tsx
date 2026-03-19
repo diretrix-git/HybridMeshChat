@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, Button } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
-import { RNCamera } from 'react-native-camera';
+import { CameraView, useCameraPermissions } from 'expo-camera';
 
 interface RoomInvite {
   roomId: string;
@@ -11,20 +11,28 @@ interface RoomInvite {
 
 export const QRJoinScreen: React.FC = () => {
   const [mode, setMode] = useState<'generate' | 'scan'>('generate');
+  const [permission, requestPermission] = useCameraPermissions();
   const [roomData] = useState<RoomInvite>({
     roomId: 'room-123',
     serverUrl: 'http://192.168.1.100:3000',
     encryptionKey: 'generated-key',
   });
 
-  const handleBarCodeRead = (event: any) => {
+  const handleBarCodeScanned = ({ data }: { data: string }) => {
     try {
-      const data: RoomInvite = JSON.parse(event.data);
-      console.log('Scanned room:', data);
+      const parsed: RoomInvite = JSON.parse(data);
+      console.log('Scanned room:', parsed);
       // Navigate to join room with data
     } catch (error) {
       console.error('Invalid QR code');
     }
+  };
+
+  const handleScanMode = async () => {
+    if (!permission?.granted) {
+      await requestPermission();
+    }
+    setMode('scan');
   };
 
   return (
@@ -32,14 +40,14 @@ export const QRJoinScreen: React.FC = () => {
       {mode === 'generate' ? (
         <View style={styles.qrContainer}>
           <QRCode value={JSON.stringify(roomData)} size={250} />
-          <Button title="Scan Instead" onPress={() => setMode('scan')} />
+          <Button title="Scan Instead" onPress={handleScanMode} />
         </View>
       ) : (
         <View style={styles.scanContainer}>
-          <RNCamera
+          <CameraView
             style={styles.camera}
-            onBarCodeRead={handleBarCodeRead}
-            barCodeTypes={[RNCamera.Constants.BarCodeType.qr]}
+            onBarcodeScanned={handleBarCodeScanned}
+            barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
           />
           <Button title="Generate Instead" onPress={() => setMode('generate')} />
         </View>

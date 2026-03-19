@@ -1,11 +1,13 @@
-import RNFS from 'react-native-fs';
+import * as FileSystem from 'expo-file-system';
 import { EncryptionService } from '../core/crypto/EncryptionService';
 
 const CHUNK_SIZE = 512; // bytes
 
 export class FileTransfer {
   static async chunkFile(filePath: string, encryptionKey: string): Promise<string[]> {
-    const fileContent = await RNFS.readFile(filePath, 'base64');
+    const fileContent = await FileSystem.readAsStringAsync(filePath, {
+      encoding: FileSystem.EncodingType.Base64,
+    });
     const chunks: string[] = [];
 
     for (let i = 0; i < fileContent.length; i += CHUNK_SIZE) {
@@ -29,23 +31,29 @@ export class FileTransfer {
       fileContent += decrypted;
     }
 
-    await RNFS.writeFile(outputPath, fileContent, 'base64');
+    await FileSystem.writeAsStringAsync(outputPath, fileContent, {
+      encoding: FileSystem.EncodingType.Base64,
+    });
   }
 
   static async saveImage(base64Data: string, fileName: string): Promise<string> {
-    const path = `${RNFS.DocumentDirectoryPath}/${fileName}`;
-    await RNFS.writeFile(path, base64Data, 'base64');
+    const path = `${FileSystem.documentDirectory}${fileName}`;
+    await FileSystem.writeAsStringAsync(path, base64Data, {
+      encoding: FileSystem.EncodingType.Base64,
+    });
     return path;
   }
 
   static async loadImage(filePath: string): Promise<string> {
-    return await RNFS.readFile(filePath, 'base64');
+    return await FileSystem.readAsStringAsync(filePath, {
+      encoding: FileSystem.EncodingType.Base64,
+    });
   }
 
   static async deleteFile(filePath: string): Promise<void> {
-    const exists = await RNFS.exists(filePath);
-    if (exists) {
-      await RNFS.unlink(filePath);
+    const info = await FileSystem.getInfoAsync(filePath);
+    if (info.exists) {
+      await FileSystem.deleteAsync(filePath);
     }
   }
 }
