@@ -1,168 +1,55 @@
 # HybridMeshChat
 
-Offline-first P2P messaging app with automatic WiFi/Bluetooth switching.
+Expo/React Native messaging prototype with a Socket.IO relay and experimental offline sync and Bluetooth modules. This repository does not yet establish a complete offline mesh chat application.
 
-## Architecture Overview
+## Current source scope
 
-### Network Layer
-- **WiFi LAN Transport**: Socket.io for high-bandwidth communication
-- **Bluetooth BLE Transport**: Mesh networking for offline scenarios
-- **Automatic Switching**: Seamless transition based on availability
-- **Connection State Machine**: Manages transport lifecycle
+This description is based on source at [`393053ee430b10d66da1c08071a84bb38df82acb`](https://github.com/diretrix-git/HybridMeshChat/tree/393053ee430b10d66da1c08071a84bb38df82acb). No fresh build, benchmark, or physical-device test was performed for this documentation update.
 
-### Data Synchronization
-- **Vector Clocks**: Tracks causality between messages
-- **Lamport Timestamps**: Provides total ordering
-- **Conflict Resolution**: Last-Write-Wins with UUID tiebreaker
-- **Deduplication**: UUID-based message uniqueness
+| Component | Implemented source and limitations |
+| --- | --- |
+| App entrypoint | `App.tsx` is a local demo: Connect changes React state and Send appends local messages. It does not connect the transport, sync, database, or encryption modules. [Source](https://github.com/diretrix-git/HybridMeshChat/blob/393053ee430b10d66da1c08071a84bb38df82acb/App.tsx#L1-L57) |
+| Wi-Fi/LAN relay | A separate Node server joins Socket.IO rooms and relays messages and sync events. The client transport connects to a supplied server URL. This is a server-mediated path, not implemented multi-hop mesh routing. [Server](https://github.com/diretrix-git/HybridMeshChat/blob/393053ee430b10d66da1c08071a84bb38df82acb/server/index.js#L1-L69), [client](https://github.com/diretrix-git/HybridMeshChat/blob/393053ee430b10d66da1c08071a84bb38df82acb/src/core/network/WiFiTransport.ts#L23-L91) |
+| BLE | Scanning, connecting, characteristic writes, and monitoring are sketched. Peripheral advertising only sets a flag and logs a message. `react-native-ble-plx` is imported but absent from the root manifest. BLE discovery between two copies of this app is not established. [Advertising and imports](https://github.com/diretrix-git/HybridMeshChat/blob/393053ee430b10d66da1c08071a84bb38df82acb/src/core/network/BluetoothTransport.ts#L1-L53), [manifest](https://github.com/diretrix-git/HybridMeshChat/blob/393053ee430b10d66da1c08071a84bb38df82acb/package.json#L1-L28) |
+| Transport selection | `TransportManager` attempts Wi-Fi first, then BLE initialization/scanning, and contains state/queue helpers. This does not establish seamless switching or lossless delivery: messages are removed from its queue without peer acknowledgement, and BLE initialization success does not prove a peer connection. [Source](https://github.com/diretrix-git/HybridMeshChat/blob/393053ee430b10d66da1c08071a84bb38df82acb/src/core/network/TransportManager.ts#L41-L86) |
+| Sync and storage | SQLite storage, vector-clock merging, Lamport counters, and UUID-based conflict/deduplication helpers exist. End-to-end convergence and causality guarantees remain unverified. The Wi-Fi transport sends sync responses but has no receiving `sync-response` handler. [Sync engine](https://github.com/diretrix-git/HybridMeshChat/blob/393053ee430b10d66da1c08071a84bb38df82acb/src/core/sync/SyncEngine.ts#L18-L60), [conflict resolver](https://github.com/diretrix-git/HybridMeshChat/blob/393053ee430b10d66da1c08071a84bb38df82acb/src/core/sync/ConflictResolver.ts#L4-L43), [storage](https://github.com/diretrix-git/HybridMeshChat/blob/393053ee430b10d66da1c08071a84bb38df82acb/src/core/storage/DatabaseManager.ts#L1-L47), [transport](https://github.com/diretrix-git/HybridMeshChat/blob/393053ee430b10d66da1c08071a84bb38df82acb/src/core/network/WiFiTransport.ts#L49-L91) |
 
-### Security
-- **AES Encryption**: All messages encrypted with room key
-- **Password Protection**: SHA-256 hashed room passwords
-- **Local Storage**: No cloud dependencies
+## Security boundaries
 
-### Leader Election
-- **Bully Algorithm**: Automatic coordinator selection
-- **Fault Tolerance**: Re-election on host disconnect
-- **Admin Roles**: Permission-based actions
+`EncryptionService` provides AES encrypt/decrypt and SHA-256 password helpers. Their presence does not mean chat messages are encrypted: `TransportManager.sendMessage` creates and sends message content without calling encryption, and the demo UI does not use these helpers. Do not treat this as verified end-to-end encrypted messaging. [Crypto helpers](https://github.com/diretrix-git/HybridMeshChat/blob/393053ee430b10d66da1c08071a84bb38df82acb/src/core/crypto/EncryptionService.ts#L1-L24), [send path](https://github.com/diretrix-git/HybridMeshChat/blob/393053ee430b10d66da1c08071a84bb38df82acb/src/core/network/TransportManager.ts#L70-L89).
 
-## Network Switching Strategy
+The separate Node relay compares supplied room passwords. The embedded `HotspotServer` accepts a password argument without checking it. Neither relay's message handler checks that the sender belongs to the supplied room. Room-password helpers therefore do not establish authenticated message/sync access. The embedded server also imports Node `http` and server-side Socket.IO in mobile source; mobile runtime compatibility needs work and verification. [Node relay](https://github.com/diretrix-git/HybridMeshChat/blob/393053ee430b10d66da1c08071a84bb38df82acb/server/index.js#L17-L51), [embedded server](https://github.com/diretrix-git/HybridMeshChat/blob/393053ee430b10d66da1c08071a84bb38df82acb/src/core/network/HotspotServer.ts#L4-L56).
 
-```
-┌─────────────────────────────────────────┐
-│         Connection Priority             │
-├─────────────────────────────────────────┤
-│ 1. WiFi LAN (if available)              │
-│ 2. Bluetooth BLE (fallback)             │
-│ 3. Queue messages if both unavailable   │
-└─────────────────────────────────────────┘
+## File transfer scope
 
-State Transitions:
-DISCONNECTED → CONNECTING_WIFI → CONNECTED_WIFI
-                     ↓
-              CONNECTING_BLUETOOTH → CONNECTED_BLUETOOTH
-                     
-CONNECTED_WIFI ←→ SWITCHING ←→ CONNECTED_BLUETOOTH
-```
+`FileTransfer` can read a file as Base64, split that string into 512-character pieces, encrypt/decrypt pieces, and write a reconstructed file. These are utility methods, not a completed transfer protocol. Encrypted pieces are not guaranteed to fit a BLE MTU, and `BluetoothTransport` encodes each entire message as Base64 without chunking/reassembly. No automatic orphan-file cleanup is established by these helpers. [File utility](https://github.com/diretrix-git/HybridMeshChat/blob/393053ee430b10d66da1c08071a84bb38df82acb/src/utils/FileTransfer.ts#L4-L58), [BLE send and encoding](https://github.com/diretrix-git/HybridMeshChat/blob/393053ee430b10d66da1c08071a84bb38df82acb/src/core/network/BluetoothTransport.ts#L93-L155).
 
-### Switching Logic
-1. Monitor WiFi availability continuously
-2. On WiFi loss: Enter SWITCHING state
-3. Flush message queue to ensure no loss
-4. Activate Bluetooth transport
-5. Sync with peers via BLE
-6. On WiFi recovery: Reverse process
+## Development setup
 
-## Bluetooth Integration
-
-### BLE Architecture
-- **Service UUID**: Custom GATT service for mesh
-- **Characteristics**:
-  - Message Channel: Encrypted message transfer
-  - Sync Channel: Timestamp exchange
-- **MTU Handling**: Chunking for large messages
-- **Discovery**: Continuous scanning for room peers
-
-### Limitations
-- Range: ~10-30 meters
-- Throughput: ~1 Mbps (vs WiFi ~100 Mbps)
-- Connections: Limited to 7-8 simultaneous peers
-- Battery: Higher consumption than WiFi
-
-### Optimization
-- Adaptive scanning intervals
-- Connection pooling
-- Message batching
-- Compression for large payloads
-
-## Conflict Resolution Algorithm
-
-```typescript
-function resolveConflict(local: Message, remote: Message): Message {
-  // 1. Check vector clock causality
-  if (remote causally follows local) return remote;
-  if (local causally follows remote) return local;
-  
-  // 2. Concurrent: use Lamport timestamp
-  if (remote.lamportTimestamp > local.lamportTimestamp) return remote;
-  if (local.lamportTimestamp > remote.lamportTimestamp) return local;
-  
-  // 3. Tiebreaker: lexicographic UUID
-  return remote.uuid > local.uuid ? remote : local;
-}
-```
-
-### Guarantees
-- **Eventual Consistency**: All peers converge to same state
-- **Causality Preservation**: Happens-before relationships maintained
-- **Deterministic**: Same input always produces same result
-
-## Performance Considerations
-
-### WiFi Transport
-- **Latency**: <10ms local network
-- **Throughput**: 10-100 MB/s
-- **Scalability**: 50+ concurrent users
-- **Reliability**: TCP guarantees
-
-### Bluetooth Transport
-- **Latency**: 50-200ms
-- **Throughput**: 100-500 KB/s
-- **Scalability**: 7-8 direct connections
-- **Reliability**: Requires retry logic
-
-### Database Optimization
-- **Indexes**: timestamp, roomId for fast queries
-- **Batch Writes**: Reduce I/O overhead
-- **Vacuum**: Periodic cleanup
-- **WAL Mode**: Better concurrency
-
-### Memory Management
-- **Message Pagination**: Load messages in chunks
-- **Image Compression**: Reduce file sizes
-- **Cache Eviction**: LRU for old messages
-- **Connection Pooling**: Reuse BLE connections
-
-## File Transfer
-
-### Strategy
-1. Chunk file into 512-byte segments
-2. Encrypt each chunk with room key
-3. Transfer via active transport
-4. Store locally with UUID reference
-5. Reconstruct on receiver side
-
-### Storage
-- Files stored in app's document directory
-- Database stores file path reference
-- Automatic cleanup of orphaned files
-
-## Installation
+The manifests provide these commands. They are starting points for development, not evidence of a successful mobile build or working cross-device messaging.
 
 ```bash
+# Expo client, from the repository root
 npm install
 npx expo prebuild
 npm run android  # or npm run ios
 ```
 
-## Usage
-
-```typescript
-import { TransportManager } from './src/core/network/TransportManager';
-import { DatabaseManager } from './src/core/storage/DatabaseManager';
-
-const db = new DatabaseManager();
-await db.initialize();
-
-const transport = new TransportManager('device-123', db);
-await transport.connect('room-abc', 'http://192.168.1.100:3000', 'password');
-
-await transport.sendMessage('Hello mesh!', 'text');
+```bash
+# Separate Node relay, from the repository root
+cd server
+npm install
+npm start
 ```
 
-## Future Enhancements
-- Multi-hop Bluetooth mesh routing
-- WebRTC for direct peer connections
-- Differential sync for large histories
-- End-to-end encryption per user
-- Voice message support
+The client command currently opens the local demo. Wiring it to the transport stack requires resolving missing native dependencies and platform support first. The relay defaults to port 3000. [Client scripts/dependencies](https://github.com/diretrix-git/HybridMeshChat/blob/393053ee430b10d66da1c08071a84bb38df82acb/package.json#L5-L25), [relay scripts](https://github.com/diretrix-git/HybridMeshChat/blob/393053ee430b10d66da1c08071a84bb38df82acb/server/package.json#L1-L12).
+
+## Remaining work
+
+- Integrate the UI with a buildable transport/storage dependency graph.
+- Implement BLE peripheral advertising/services and payload framing before claiming BLE chat or mesh support.
+- Complete sync-response handling, peer authorization, encryption integration, and acknowledged retry/persistence behavior.
+- Add automated tests and verify two physical devices, reconnects, sync conflicts, and file transfers.
+- Measure latency, throughput, battery use, and peer limits before publishing performance claims.
+
+No automated test suite was found in the inspected source tree. Originality and sole authorship have not been independently verified. The architecture and hotspot guide documents describe design intent; use the source scope above when evaluating current capabilities.
